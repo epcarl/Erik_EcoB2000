@@ -1,0 +1,229 @@
+---
+title: "Homework 1"
+author: "Erik Carlson"
+date: "9/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('xts')
+library('zoo')
+library('quantmod')
+```
+
+
+This assignment was completed by myself, however for future studying and assignments I will be working with Emily Vasquez, Emmanuel Mendez and Joe Correa.
+
+
+Prior to class, A six sided dice was adjusted by putting it in an oven at 200 degrees Farenheight for 200 degrees. The dice was put in the oven with the 1 size facing up, so any potentially melted plastic inside the die would pool towards the 6 side.  
+
+After rolling this dice the results were:
+  6,3,6,5,6,5,3,2,3,3,6,1,5,1,1,3,4,6,3,2
+
+where the mean of this result is:
+```{r}
+  loadie<-c(6,3,6,5,6,5,3,2,3,3,6,1,5,1,1,3,4,6,3,2)
+  paste("Mean of potentially loaded die is ", mean(loadie))
+```
+
+It is possible to simulate a fair dice roll with the following code in R, where 30 rolls are made in this instance.  
+
+```{r}
+  fair_roll<-sample(1:6,30,replace=TRUE)
+```
+
+In order to determine whether a die is loaded or not, a method such as a chi squared test is able to determine whether it is statistically significant.  Other methods such as counting the number of sixes may be useful with a large enough sample size, however it may not be able to confidently state whether the die is loaded.  Without a significant sample size it would be difficult to determine whether the result differes from the expected probabilty of 1/6 without more complex methods.
+
+
+## PUMS-NY DATA 
+
+First the commands in the lecture notes were replicated, and in the later section the variable family size was investigated in more depth.
+
+
+```{r message=FALSE}
+load("acs2017_ny_data.RData")
+#glimpse(acs2017_ny) try this later
+#acs2017_ny[1:10,1:7]
+attach(acs2017_ny)
+```
+
+```{r}
+summary(acs2017_ny)
+print(NN_obs <- length(AGE))
+```
+
+```{r}
+summary(AGE[female == 1])
+summary(AGE[!female])
+```
+
+```{r}
+# average ages of me and women
+mean(AGE[female == 1])
+sd(AGE[female == 1])
+mean(AGE[!female])
+sd(AGE[!female])
+```
+## PUMS-NY Data - Family Size
+
+Something in the dataset I wanted to investigate was Family size.  I wanted to investigate the variable and how it varied across different areas, the general income levels of different family sizes, and the family size given different levels of educational attainment.  The lowest value of familiy size is a single individual while the maximum was 19. 
+
+```{r ,echo=FALSE}
+print("Mean Family sizes by region")
+
+paste("NYC,",mean(FAMSIZE[in_NYC==1]))
+
+paste("Bronx,", mean(FAMSIZE[in_Bronx==1]))
+
+paste("Manhattan,", mean(FAMSIZE[in_Manhattan==1]))
+
+paste("Staten Island,", mean(FAMSIZE[in_StatenI==1]))
+
+paste("Brooklyn,", mean(FAMSIZE[in_Brooklyn==1]))
+
+paste("Queens,", mean(FAMSIZE[in_Queens==1]))
+
+paste("Westchester", mean(FAMSIZE[in_Westchester==1]))
+
+paste("Nassau", mean(FAMSIZE[in_Nassau==1]))
+```
+
+From this information Manahttan has the lowest mean family size of about 2.31.
+After this the mean income was found.
+
+```{r}
+mean(INCWAGE, na.rm=TRUE)
+```
+
+Since family size is the variable of interest, income was plotted against family size.
+
+```{r , echo=FALSE}
+plot((INCWAGE~FAMSIZE))
+```
+
+
+This plot shows a clustering of income levels between 1 and 5, and then a decline in income once the family gets larger.  However this plot is not able to clearly differentiate the common family sizes of 1-5, so another plot was made with the mean of each of these common family sizes.
+
+
+```{r , echo=FALSE}
+yy<-c(mean(INCWAGE[FAMSIZE==1], na.rm=TRUE)
+,mean(INCWAGE[FAMSIZE==2], na.rm=TRUE)
+,mean(INCWAGE[FAMSIZE==3], na.rm=TRUE)
+,mean(INCWAGE[FAMSIZE==4], na.rm=TRUE)
+,mean(INCWAGE[FAMSIZE==5], na.rm=TRUE)
+,mean(INCWAGE[FAMSIZE==6], na.rm=TRUE)
+,mean(INCWAGE[FAMSIZE==7], na.rm=TRUE))
+
+plot(yy,type='l'
+,xlab='Family size'
+,ylab='INC WAGE'
+)
+```
+
+
+This plot shows that the highest mean income was noted for a family size of 4. This was interesting when paired with the seemingly contradictory information that Manhattan has the lowest family size yet a much higher income than the mean. This shows that this relationship may be true overall, however it does not perfectly describe areas such as Manhattan.
+
+```{r}
+mean(INCWAGE[in_Manhattan==TRUE], na.rm=TRUE)
+```
+
+Then Family sizes were considered based on educational attainment
+
+```{r, echo=FALSE}
+print("Mean Family Size given educational attainment")
+
+paste("no hs," , mean(FAMSIZE[educ_nohs==1]))
+
+paste("hs," , mean(FAMSIZE[educ_hs==1]))
+
+paste("somecoll,", mean(FAMSIZE[educ_somecoll==1]))
+
+paste("college,", mean(FAMSIZE[educ_college==1]))
+
+paste("adv degree,", mean(FAMSIZE[educ_advdeg==1]))
+
+```
+
+Mean family size is highest if no highschool was reported, while the means were close for all other levels of educational attainment, though those with advanced degrees had the lowest reported family size.  
+
+## S&P 500
+
+The SP500 data was extracted using the R library quantmod and the source of the data is yahoo finance.  Daily returns of the S&P 500 were analyzed from December 29th 2019 to September 12th 2020.  
+
+```{r , message=FALSE}
+sp500 = new.env()
+getSymbols("^GSPC", env = sp500, src ="yahoo", from = as.Date("2019-12-29"),to = as.Date("2020-12-09"))
+GSPC <- sp500$GSPC
+test<-periodReturn(GSPC,period='daily')  #holds daily returns for the period
+```
+
+```{r}
+#mean daily return in percentage
+mdr<-round(mean(test)*100,4)
+paste("Mean daily return is",mean(test), " or ", mdr,"%")
+
+```
+
+After calculting the daily return for this period, the mean returns were analyzed based on the result of the previous day.  There were three cases that were analyzed. First the mean daily return if the previous day had a positive return, The return if the previous two days were positive, and the return if the previous day was negative.  
+
+
+```{r}
+indicies<-c()
+dayafter<-c()
+
+
+for (k in 1:(length(test)-1)) #check entire SP500 return list
+{
+  if (test[[k]]>0) {            #check fit critera, positive returb
+    indicies<-c(indicies,k+1) #add the location of the next day to an array to be used later
+  }
+  
+}
+for (t in 1:length(indicies)) {    #for number of entries of new array
+  dayafter<-c(dayafter,test[indicies[t]])       
+  #use location array to make a new array of daily return values
+}
+mean(dayafter)  #find mean of the daily returns
+paste("Mean daily return after a positive day =",mean(dayafter))
+paste("Standard Deviation after a positive day =",sd(dayafter))
+```
+
+```{r}
+#after 2 days positive in a row
+indicies<-c()
+dayafter<-c()
+for (k in 2:(length(test)-1))
+{
+  if (test[[k]]>0 & test[[k-1]]>0) {
+    indicies<-c(indicies,k+1)
+  }
+  
+}
+for (t in 1:length(indicies)) {
+  dayafter<-c(dayafter,test[indicies[t]])
+}
+mean(dayafter)
+paste("Mean daily return after two positive days =",mean(dayafter))
+paste("Standard deviation after two positive day =",sd(dayafter))
+```
+
+```{r}
+# after 1 negative day
+indicies<-c()
+dayafter<-c()
+for (k in 1:(length(test)-1))
+{
+  if (test[[k]]<0) {
+    indicies<-c(indicies,k+1)
+  }
+  
+}
+for (t in 1:length(indicies)) {
+  dayafter<-c(dayafter,test[indicies[t]])
+  
+}
+paste("Mean daily return after negative day =",mean(dayafter))
+paste("Standard deviation after a negative day =",sd(dayafter))
+```
+The results from this seem similar to the the explanation of the hot hands bias regarding the paper by Miller and Sanjurjo.  In the statement of the bias, they explain that if Jack flips a coin a fixed number of times and given the previous flip as heads, Jill should precict that the flip after that one was tails.  In this case the means appear to have similar results, with a larger mean gain after a negative day and a negative mean gain after a positive day.  However given the standard deviations for this sample it is not likely to be statistically significant and is not a viable investment strategy.  It's possible statistical significance in the sample is not the main reason why it is not a viable strategy though.  The main point however, is that this bias exists due to how the conditional probability problem is stated, in that certain data is deliberately excluded from the sample.
